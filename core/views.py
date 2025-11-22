@@ -5,7 +5,8 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from .io_utils import append_jsonl, truncate_output_files
 from django.shortcuts import get_object_or_404
-
+from django.http import JsonResponse
+from django.views.decorators.http import require_http_methods
 from .models import Thread, Summary
 from .serializers import ThreadListSerializer, ThreadDetailSerializer, SummarySerializer
 from .summarizer import summarize_thread
@@ -19,6 +20,17 @@ class ThreadViewSet(viewsets.ReadOnlyModelViewSet):
         thread = get_object_or_404(Thread, thread_id=kwargs.get("thread_id"))
         serializer = ThreadDetailSerializer(thread)
         return Response(serializer.data)
+    
+from django.http import JsonResponse
+from django.views.decorators.http import require_http_methods
+
+@require_http_methods(["GET"])
+def health_check(request):
+    """Health check endpoint for deployment monitoring."""
+    return JsonResponse({
+        "status": "healthy",
+        "service": "ce-sdm-backend"
+    })
 
 @api_view(["POST"])
 def summarize(request):

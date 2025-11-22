@@ -17,7 +17,7 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from core.views import admin_reset, get_summary, post_crm_note
+from core.views import admin_reset, get_summary, health_check, post_crm_note
 from core.views import ThreadViewSet, summarize, save_edit, approve
 
 router = DefaultRouter()
@@ -25,6 +25,7 @@ router.register(r'api/threads', ThreadViewSet, basename='thread')
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('api/health/', health_check),
     path('', include(router.urls)),
     path('api/summarize', summarize),
     path('api/summary/<str:thread_id>/save-edit', save_edit),

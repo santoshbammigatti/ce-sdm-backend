@@ -1,0 +1,9 @@
+[build]
+builder = "dockerfile"
+dockerfilePath = "Dockerfile"
+
+[deploy]
+startCommand = "python manage.py migrate && gunicorn config.wsgi:application --bind 0.0.0.0:$PORT"
+restartPolicyMaxRetries = 5
+healthcheckPath = "/api/health"
+healthcheckInterval = 10
