@@ -15,18 +15,29 @@ except ImportError:
 USE_LLM = os.getenv('USE_LLM', 'True').lower() == 'true'
 HF_API_TOKEN = os.getenv('HF_API_TOKEN', '')
 
+
 # Quick-start development settings
 SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-t66l_i$h&xq-uo289+wfnd3kr$dmel4hyo11$*p$t!7@pri!oq')
-
 DEBUG = os.getenv('DEBUG', 'True').lower() == 'true'
 
 # ALLOWED_HOSTS - support Railway's dynamic domains
-ALLOWED_HOSTS = [
-    'localhost',
-    '127.0.0.1',
-    'ce-sdm-backend.railway.app',
-    '.railway.app',  # Wildcard for all Railway domains
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', '.railway.app', '.up.railway.app']
+
+# Railway proxy configuration - CRITICAL for HTTPS
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+USE_X_FORWARDED_HOST = True
+
+# CSRF settings for Railway
+CSRF_TRUSTED_ORIGINS = [
+    'https://*.railway.app',
+    'https://*.up.railway.app',
 ]
+
+CORS_ALLOWED_ORIGINS = [
+    'http://localhost:5173',
+    'http://localhost:3000',
+]
+CORS_ALLOW_CREDENTIALS = True
 
 # Add from environment variable if provided
 if os.getenv('ALLOWED_HOSTS'):
