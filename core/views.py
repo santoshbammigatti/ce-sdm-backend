@@ -23,16 +23,22 @@ class ThreadViewSet(viewsets.ReadOnlyModelViewSet):
 @api_view(["POST"])
 def summarize(request):
     """
-    Body: { "thread_id": "CE-405467-683" }
+    Body: { 
+      "thread_id": "CE-405467-683",
+      "llm_token": "optional-groq-api-key"
+    }
     Generates/refreshes a DRAFT summary for the thread.
+    If llm_token is provided and valid, uses LLM. Otherwise uses rule-based approach.
     """
     thread_id = request.data.get("thread_id")
+    llm_token = request.data.get("llm_token")
+    
     if not thread_id:
         return Response({"detail": "thread_id is required"}, status=400)
 
     thread = get_object_or_404(Thread, thread_id=thread_id)
 
-    # Produce draft using rules
+    # Produce draft using LLM (if token provided) or rules
     payload = {
         "thread_id": thread.thread_id,
         "order_id": thread.order_id,
@@ -40,7 +46,7 @@ def summarize(request):
         "initiated_by": thread.initiated_by,
         "messages": thread.messages,
     }
-    result = summarize_thread(payload)
+    result = summarize_thread(payload, llm_api_key=llm_token)
 
     # Upsert Summary
     summary, _ = Summary.objects.get_or_create(thread=thread)

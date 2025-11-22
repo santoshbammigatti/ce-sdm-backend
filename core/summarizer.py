@@ -6,10 +6,6 @@ from typing import Dict, Any, List, Optional
 from django.conf import settings
 from .crm_context import get_order, get_customer
 
-# LLM Configuration
-USE_LLM = os.getenv('USE_LLM', 'True').lower() == 'true'
-GROQ_API_KEY = os.getenv('GROQ_API_KEY', '')
-
 # Keywords for rule-based classification
 KEYWORDS = {
     "refund": ["refund", "credit", "money back"],
@@ -28,10 +24,52 @@ def _contains_any(text: str, tokens: List[str]) -> bool:
     t = text.lower()
     return any(tok in t for tok in tokens)
 
-def _get_llm_summary(thread: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+def _test_llm_api(api_key: str) -> bool:
+    """Test if the provided LLM API key is valid"""
+    if not api_key:
+        print("LLM API key not provided")
+        return False
+    
+    API_URL = "https://api.groq.com/openai/v1/chat/completions"
+    headers = {
+        "Authorization": f"Bearer {api_key}",
+        "Content-Type": "application/json"
+    }
+    
+    test_payload = {
+        "model": "llama-3.3-70b-versatile",
+        "messages": [
+            {
+                "role": "user",
+                "content": "Hello"
+            }
+        ],
+        "max_tokens": 10
+    }
+    
+    try:
+        response = requests.post(
+            API_URL,
+            headers=headers,
+            json=test_payload,
+            timeout=10,
+            verify=True
+        )
+        
+        if response.status_code == 200:
+            print("LLM API key is valid")
+            return True
+        else:
+            print(f"LLM API key validation failed: {response.status_code} - {response.text}")
+            return False
+    except Exception as e:
+        print(f"LLM API key validation error: {e}")
+        return False
+
+def _get_llm_summary(thread: Dict[str, Any], api_key: str) -> Optional[Dict[str, Any]]:
     """Use LLM to analyze entire thread and generate structured summary"""
-    if not GROQ_API_KEY:
-        print("GROQ_API_KEY not set, skipping LLM analysis")
+    if not api_key:
+        print("LLM API key not provided, skipping LLM analysis")
         return None
     
     messages = thread.get("messages", [])
@@ -39,7 +77,7 @@ def _get_llm_summary(thread: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     
     API_URL = "https://api.groq.com/openai/v1/chat/completions"
     headers = {
-        "Authorization": f"Bearer {GROQ_API_KEY}",
+        "Authorization": f"Bearer {api_key}",
         "Content-Type": "application/json"
     }
     
@@ -290,9 +328,13 @@ def summarize_thread_nonLLM(thread: Dict[str, Any]) -> Dict[str, Any]:
     
     return {"draft_summary": draft_summary, "draft_fields": draft_fields}
 
-def summarize_thread(thread: Dict[str, Any]) -> Dict[str, Any]:
+def summarize_thread(thread: Dict[str, Any], llm_api_key: Optional[str] = None) -> Dict[str, Any]:
     """
-    Main summarization function. Uses LLM if available and configured, falls back to rule-based.
+    Main summarization function. Uses LLM if API key is provided and valid, falls back to rule-based.
+    
+    Args:
+        thread: Thread data dictionary
+        llm_api_key: Optional LLM API key (Groq). If provided and valid, uses LLM. Otherwise uses rules.
     
     Returns:
       {
@@ -304,16 +346,24 @@ def summarize_thread(thread: Dict[str, Any]) -> Dict[str, Any]:
     product = thread.get("product") or ""
     initiated_by = thread.get("initiated_by") or ""
     
-    # Get LLM analysis if enabled and API key is available
+    # Get LLM analysis if API key is provided and valid
     llm_analysis = None
-    if USE_LLM and GROQ_API_KEY:
-        print("Using LLM for summarization...")
-        llm_analysis = _get_llm_summary(thread)
+    if llm_api_key:
+        print("Testing LLM API key...")
+        if _test_llm_api(llm_api_key):
+            print("Using LLM for summarization...")
+            llm_analysis = _get_llm_summary(thread, llm_api_key)
+        else:
+            print("LLM API key is invalid, falling back to rule-based summarization...")
+    else:
+        print("No LLM API key provided, using rule-based summarization...")
     
     # Fallback to rule-based if LLM not available or failed
     if not llm_analysis:
         print("Using rule-based summarization...")
-        return summarize_thread_nonLLM(thread)
+        result = summarize_thread_nonLLM(thread)
+        result["draft_summary"] += "\n\n---\n*This response was generated via built-in rule-based generation.*"
+        return result
     
     # CRM enrichment for LLM results
     policy: Optional[str] = None
@@ -351,6 +401,9 @@ def summarize_thread(thread: Dict[str, Any]) -> Dict[str, Any]:
     
     if crm_bits:
         draft_summary += "\n\n" + " ".join(crm_bits)
+
+    # Add generation method note
+    draft_summary += "\n\n---\n*This response was generated via LLM.*"
 
     # Structured fields
     draft_fields: Dict[str, Any] = {
