@@ -1,7 +1,6 @@
 import os
 from pathlib import Path
 from dotenv import load_dotenv
-import dj_database_url
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(BASE_DIR / '.env')
@@ -21,14 +20,18 @@ SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-t66l_i$h&xq-uo289+wfnd3kr$
 
 DEBUG = os.getenv('DEBUG', 'True').lower() == 'true'
 
-ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1,.railway.app').split(',')
+# ALLOWED_HOSTS - support Railway's dynamic domains
+ALLOWED_HOSTS = [
+    'localhost',
+    '127.0.0.1',
+    'ce-sdm-backend.railway.app',
+    '.railway.app',  # Wildcard for all Railway domains
+]
 
-# Add Railway domains if not in DEBUG mode
-if not DEBUG:
-    ALLOWED_HOSTS.extend([
-        'ce-sdm-backend.railway.app',
-        '.railway.app',
-    ])
+# Add from environment variable if provided
+if os.getenv('ALLOWED_HOSTS'):
+    ALLOWED_HOSTS.extend(os.getenv('ALLOWED_HOSTS').split(','))
+
 
 # Application definition
 INSTALLED_APPS = [
