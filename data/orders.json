@@ -1,0 +1,10 @@
+[ 
+  {
+    "order_id": "405467-683",
+    "customer_id": "C-1001",
+    "product": "LED Monitor",
+    "status": "Delivered",
+    "policy": "30-day return; refund on first carrier scan",
+    "stock_available": true
+  }
+]
