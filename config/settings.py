@@ -14,7 +14,14 @@ SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-t66l_i$h&xq-uo289+wfnd3kr$
 
 DEBUG = os.getenv('DEBUG', 'True').lower() == 'true'
 
-ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
+ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1,.railway.app').split(',')
+
+# Add Railway domains if not in DEBUG mode
+if not DEBUG:
+    ALLOWED_HOSTS.extend([
+        'ce-sdm-backend.railway.app',
+        '.railway.app',
+    ])
 
 # Application definition
 INSTALLED_APPS = [

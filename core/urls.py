@@ -6,7 +6,6 @@ router = DefaultRouter()
 router.register(r'threads', views.ThreadViewSet, basename='thread')
 
 urlpatterns = [
-    path('health/', views.health_check, name='health_check'),
     path('summarize/', views.summarize, name='summarize'),
     path('threads/<str:thread_id>/summary/', views.get_summary, name='get_summary'),
     path('threads/<str:thread_id>/save-edit/', views.save_edit, name='save_edit'),

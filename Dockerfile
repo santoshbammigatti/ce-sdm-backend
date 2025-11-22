@@ -10,6 +10,6 @@ COPY . .
 RUN python manage.py migrate --noinput || true
 RUN python manage.py collectstatic --noinput || true
 
-EXPOSE 8000
+EXPOSE 8080
 
-CMD gunicorn config.wsgi:application --bind 0.0.0.0:${PORT:-8000} --workers 2 --timeout 120
+CMD gunicorn config.wsgi:application --bind 0.0.0.0:${PORT:-8080} --workers 2 --timeout 120
