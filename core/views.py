@@ -1,3 +1,4 @@
+import logging
 from django.utils import timezone
 from rest_framework import viewsets
 from django.db import transaction
@@ -10,7 +11,20 @@ from django.views.decorators.http import require_http_methods
 from .models import Thread, Summary
 from .serializers import ThreadListSerializer, ThreadDetailSerializer, SummarySerializer
 from .summarizer import summarize_thread
+from django.http import JsonResponse
+from django.views.decorators.http import require_http_methods
 
+
+
+logger = logging.getLogger(__name__)
+
+@require_http_methods(["GET"])
+def health_check(request):
+    """Health check endpoint for deployment monitoring."""
+    return JsonResponse({
+        "status": "healthy",
+        "service": "ce-sdm-backend"
+    })
 class ThreadViewSet(viewsets.ReadOnlyModelViewSet):
     lookup_field = "thread_id"
     queryset = Thread.objects.all().order_by("thread_id")
@@ -21,16 +35,6 @@ class ThreadViewSet(viewsets.ReadOnlyModelViewSet):
         serializer = ThreadDetailSerializer(thread)
         return Response(serializer.data)
     
-from django.http import JsonResponse
-from django.views.decorators.http import require_http_methods
-
-@require_http_methods(["GET"])
-def health_check(request):
-    """Health check endpoint for deployment monitoring."""
-    return JsonResponse({
-        "status": "healthy",
-        "service": "ce-sdm-backend"
-    })
 
 @api_view(["POST"])
 def summarize(request):
