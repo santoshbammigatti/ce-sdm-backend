@@ -15,5 +15,4 @@ urlpatterns = [
     path('admin-reset/', views.admin_reset, name='admin_reset'),
 ]
 
-# Add router URLs
 urlpatterns += router.urls
