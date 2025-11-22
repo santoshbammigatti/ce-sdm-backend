@@ -11,7 +11,8 @@ def root_check(request):
         "endpoints": {
             "health": "/api/health/",
             "threads": "/api/threads/",
-            "admin": "/admin/"
+            "admin": "/admin/",
+            "ingest": "/api/admin/ingest/"
         }
     })
 

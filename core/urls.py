@@ -12,6 +12,7 @@ urlpatterns = [
     path('threads/<str:thread_id>/approve/', views.approve, name='approve'),
     path('crm-note/', views.post_crm_note, name='post_crm_note'),
     path('admin-reset/', views.admin_reset, name='admin_reset'),
+    path('admin/ingest/', views.ingest_data_endpoint, name='ingest_data'),
 ]
 
 urlpatterns += router.urls

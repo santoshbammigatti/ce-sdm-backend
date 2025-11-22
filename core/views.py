@@ -13,6 +13,7 @@ from .serializers import ThreadListSerializer, ThreadDetailSerializer, SummarySe
 from .summarizer import summarize_thread
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
+from django.core.management import call_command
 
 
 
@@ -25,6 +26,24 @@ def health_check(request):
         "status": "healthy",
         "service": "ce-sdm-backend"
     })
+
+@require_http_methods(["POST"])
+def ingest_data_endpoint(request):
+    """Admin endpoint to ingest sample data into Railway database"""
+    try:
+        call_command('ingest_threads')
+        from core.models import Thread
+        count = Thread.objects.count()
+        return JsonResponse({
+            "status": "success",
+            "message": f"Sample data ingested successfully. {count} threads in database."
+        })
+    except Exception as e:
+        return JsonResponse({
+            "status": "error",
+            "message": str(e)
+        }, status=500)
+
 class ThreadViewSet(viewsets.ReadOnlyModelViewSet):
     lookup_field = "thread_id"
     queryset = Thread.objects.all().order_by("thread_id")
