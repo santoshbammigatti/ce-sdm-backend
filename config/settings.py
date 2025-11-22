@@ -6,6 +6,13 @@ import dj_database_url
 BASE_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(BASE_DIR / '.env')
 
+# Try to import dj_database_url, use SQLite if not available
+try:
+    import dj_database_url
+    HAS_DJ_DATABASE_URL = True
+except ImportError:
+    HAS_DJ_DATABASE_URL = False
+
 USE_LLM = os.getenv('USE_LLM', 'True').lower() == 'true'
 HF_API_TOKEN = os.getenv('HF_API_TOKEN', '')
 
@@ -66,12 +73,19 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'config.wsgi.application'
 
-# Database Configuration (ONLY ONCE)
-if os.getenv('DATABASE_URL'):
+# Database
+# https://docs.djangoproject.com/en/5.1/ref/settings/#databases
+
+if HAS_DJ_DATABASE_URL and os.getenv('DATABASE_URL'):
+    # Use Railway/production database
     DATABASES = {
-        'default': dj_database_url.config(default=os.getenv('DATABASE_URL'))
+        'default': dj_database_url.config(
+            default=os.getenv('DATABASE_URL'),
+            conn_max_age=600
+        )
     }
 else:
+    # Use SQLite for local development
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
