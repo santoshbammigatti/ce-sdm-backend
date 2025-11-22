@@ -153,7 +153,13 @@ if DEBUG:
     ]
 else:
     CORS_ALLOW_ALL_ORIGINS = False
-    CORS_ALLOWED_ORIGINS = os.getenv('CORS_ALLOWED_ORIGINS', 'https://ce-sdm-backend.railway.app').split(',')
+    CORS_ALLOWED_ORIGINS = [
+        "https://dancing-kashata-38d6d1.netlify.app",
+        "https://*.netlify.app",  # Support all Netlify preview deployments
+    ]
+    # Also support environment variable override
+    if os.getenv('CORS_ALLOWED_ORIGINS'):
+        CORS_ALLOWED_ORIGINS.extend(os.getenv('CORS_ALLOWED_ORIGINS').split(','))
 
 # CSRF Configuration - MUST include scheme!
 CSRF_TRUSTED_ORIGINS = os.getenv('CSRF_TRUSTED_ORIGINS', 'http://localhost:8000').split(',')
@@ -163,6 +169,8 @@ if not DEBUG:
     CSRF_TRUSTED_ORIGINS = [
         "https://ce-sdm-backend.railway.app",
         "https://*.railway.app",
+        "https://dancing-kashata-38d6d1.netlify.app",
+        "https://*.netlify.app",
     ]
 
 # Security (production only)
