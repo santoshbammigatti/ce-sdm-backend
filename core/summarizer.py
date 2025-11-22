@@ -1,7 +1,12 @@
-# core/summarizer.py
-import re
+
+from django.conf import settings
+import requests
 from typing import Dict, Any, List, Optional
 from .crm_context import get_order, get_customer
+
+# LLM Configuration
+USE_LLM = os.getenv('USE_LLM', 'True').lower() == 'true'
+HF_API_TOKEN = os.getenv('HF_API_TOKEN', '')  # Load from environment variable
 
 KEYWORDS = {
     "refund": ["refund", "credit"],
@@ -14,6 +19,40 @@ KEYWORDS = {
     "delay": ["late", "delayed", "delay"],
     "wrong_variant": ["wrong", "size", "color", "variant"],
 }
+
+def _rewrite_with_llm(draft_text: str) -> str:
+    """Rewrite draft summary using Hugging Face free API"""
+    if not HF_API_TOKEN:
+        print("HF_API_TOKEN not set, skipping LLM rewrite")
+        return draft_text
+    
+    API_URL = "https://api-inference.huggingface.co/models/facebook/bart-large-cnn"
+    headers = {"Authorization": f"Bearer {HF_API_TOKEN}"}
+    
+    payload = {
+        "inputs": f"Rewrite this customer service summary in a professional tone:\n\n{draft_text}",
+        "parameters": {"max_length": 200, "min_length": 50}
+    }
+    
+    try:
+        # Use certifi bundle for SSL verification
+        response = requests.post(
+            API_URL, 
+            headers=headers, 
+            json=payload, 
+            timeout=10,
+            verify=False  # Bypass SSL verification(Prototype only; not for production use)
+        )
+        if response.status_code == 200:
+            result = response.json()
+            print("LLM rewrite successful")
+            return result[0]["summary_text"] if isinstance(result, list) else draft_text
+        else:
+            print(f"HF API returned status {response.status_code}: {response.text}")
+    except Exception as e:
+        print(f"LLM rewrite failed: {e}")
+    
+    return draft_text
 
 def _contains_any(text: str, tokens: List[str]) -> bool:
     t = text.lower()
@@ -114,6 +153,9 @@ def summarize_thread(thread: Dict[str, Any]) -> Dict[str, Any]:
         f"Initiated by **{initiated_by}**. Customer mentions: {', '.join(customer_ask) or 'N/A'}. "
         f"Recommend: {recommended}. Next actions: {', '.join(next_actions) or 'Confirm details with customer'}.{crm_tail}"
     )
+
+    if USE_LLM:
+        draft_summary = _rewrite_with_llm(draft_summary)
 
     # 6) Structured fields (include a safe crm_snapshot)
     draft_fields: Dict[str, Any] = {
