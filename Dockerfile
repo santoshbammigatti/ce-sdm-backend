@@ -1,8 +1,12 @@
 FROM python:3.11-slim
 
+# Set environment variables
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONDONTWRITEBYTECODE=1
+
 WORKDIR /app
 
-# Copy requirements and install dependencies
+# Install dependencies
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt gunicorn
 
@@ -12,15 +16,17 @@ COPY . .
 # Collect static files
 RUN python manage.py collectstatic --noinput || true
 
-# Expose port
-EXPOSE ${PORT:-8080}
+# Expose port (Railway sets this dynamically)
+EXPOSE 8080
 
-# Run migrations and start gunicorn with explicit port
-CMD python manage.py migrate --noinput && \
+# Run migrations and start gunicorn
+# Important: Use 0.0.0.0 to listen on all interfaces
+CMD sh -c "python manage.py migrate --noinput && \
     gunicorn config.wsgi:application \
-    --bind 0.0.0.0:${PORT:-8080} \
+    --bind 0.0.0.0:\${PORT:-8080} \
     --workers 2 \
-    --timeout 60 \
+    --threads 4 \
+    --timeout 120 \
     --access-logfile - \
     --error-logfile - \
-    --log-level info
+    --log-level debug"
