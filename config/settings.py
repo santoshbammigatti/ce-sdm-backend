@@ -108,14 +108,27 @@ REST_FRAMEWORK = {
     ]
 }
 
-# CORS Configuration (ONLY ONCE)
+# CORS Configuration
 if DEBUG:
     CORS_ALLOW_ALL_ORIGINS = True
+    CORS_ALLOWED_ORIGINS = [
+        "http://localhost:5173",
+        "http://localhost:3000",
+        "http://localhost:8000",
+    ]
 else:
     CORS_ALLOW_ALL_ORIGINS = False
-    CORS_ALLOWED_ORIGINS = os.getenv('CORS_ALLOWED_ORIGINS', 'localhost').split(',')
+    CORS_ALLOWED_ORIGINS = os.getenv('CORS_ALLOWED_ORIGINS', 'https://ce-sdm-backend.railway.app').split(',')
 
-CSRF_TRUSTED_ORIGINS = os.getenv('CSRF_TRUSTED_ORIGINS', 'localhost').split(',')
+# CSRF Configuration - MUST include scheme!
+CSRF_TRUSTED_ORIGINS = os.getenv('CSRF_TRUSTED_ORIGINS', 'http://localhost:8000').split(',')
+
+if not DEBUG:
+    # Production: use https
+    CSRF_TRUSTED_ORIGINS = [
+        "https://ce-sdm-backend.railway.app",
+        "https://*.railway.app",
+    ]
 
 # Security (production only)
 if not DEBUG:
