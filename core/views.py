@@ -14,6 +14,7 @@ from .summarizer import summarize_thread
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
 from django.core.management import call_command
+from django.views.decorators.csrf import csrf_exempt
 
 
 
@@ -27,6 +28,7 @@ def health_check(request):
         "service": "ce-sdm-backend"
     })
 
+@csrf_exempt 
 @require_http_methods(["POST"])
 def ingest_data_endpoint(request):
     """Admin endpoint to ingest sample data into Railway database"""
